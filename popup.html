@@ -1,0 +1,73 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <meta charset="UTF-8">
+    <link rel="stylesheet" href="popup.css">
+</head>
+<body>
+    <div class="container">
+        <h1>LingoSync Translator</h1>
+
+        <div class="status" id="status">
+            <span class="status-indicator" id="statusIndicator"></span>
+            <span id="statusText">Inactive</span>
+        </div>
+
+        <div class="languages" id="languages">
+            <div class="language-display">
+                <strong>Language A:</strong> <span id="langA">Not set</span>
+            </div>
+            <div class="language-display">
+                <strong>Language B:</strong> <span id="langB">Not set</span>
+            </div>
+        </div>
+
+        <div class="controls">
+            <button id="startBtn" class="btn btn-primary">Start Session</button>
+            <button id="stopBtn" class="btn btn-secondary" disabled>Stop Session</button>
+        </div>
+
+        <div class="warnings">
+            <h3>⚠️ Important Warnings</h3>
+
+            <div class="warning-item">
+                <strong>🎯 Translation Accuracy:</strong>
+                <p>AI translations may miss nuance, idioms, or context. NOT suitable for legal, medical, or safety-critical conversations.</p>
+            </div>
+
+            <div class="warning-item">
+                <strong>🔒 Data Privacy:</strong>
+                <p>All speech is sent to OpenAI's servers. Do not discuss confidential, personal, or sensitive information.</p>
+            </div>
+
+            <div class="warning-item">
+                <strong>🎭 Emotional Context:</strong>
+                <p>Cannot convey tone, sarcasm, humor, or cultural context. Use for factual exchanges only.</p>
+            </div>
+
+            <div class="warning-item">
+                <strong>⏱️ Turn-Taking Required:</strong>
+                <p>Wait for translation before speaking. Interruptions will break the session.</p>
+            </div>
+
+            <div class="warning-item">
+                <strong>🔄 Session Fragility:</strong>
+                <p>Refreshing the page or LLM errors require restarting language setup.</p>
+            </div>
+        </div>
+
+        <div class="instructions">
+            <h3>Setup Instructions:</h3>
+            <ol>
+                <li>Click "Start Session"</li>
+                <li>Speaker A: Say a greeting in your language</li>
+                <li>Wait for confirmation</li>
+                <li>Speaker B: Say a greeting in your language</li>
+                <li>Begin conversation (alternate turns)</li>
+            </ol>
+        </div>
+    </div>
+
+    <script src="popup.js"></script>
+</body>
+</html>

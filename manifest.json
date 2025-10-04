@@ -1,0 +1,34 @@
+{
+  "manifest_version": 3,
+  "name": "LingoSync Translator",
+  "version": "1.0.0",
+  "description": "A sidecar utility for seamless two-way, real-time audio translation with ChatGPT voice plugins.",
+  "icons": {
+    "48": "icons/lingosync-48.png"
+  },
+  "content_scripts": [
+    {
+      "matches": [
+        "https://chat.openai.com/*",
+        "https://chatgpt.com/*"
+      ],
+      "js": ["content.js"],
+      "run_at": "document_idle"
+    }
+  ],
+  "background": {
+    "service_worker": "background.js"
+  },
+  "action": {
+    "default_popup": "popup.html",
+    "default_icon": "icons/lingosync-48.png"
+  },
+  "permissions": [
+    "storage",
+    "activeTab"
+  ],
+  "host_permissions": [
+    "https://chat.openai.com/*",
+    "https://chatgpt.com/*"
+  ]
+}
