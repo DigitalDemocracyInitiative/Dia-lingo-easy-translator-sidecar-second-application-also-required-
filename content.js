@@ -112,24 +112,34 @@ const outputObserver = new MutationObserver((mutations) => {
                         action: 'HANDLE_LLM_RESPONSE',
                         text: messageText
                     }, (response) => {
-                        if (response && response.setupComplete) {
-                            console.log('LingoSync: Setup complete, translation active');
+                        if (response && response.continueSetup) {
+                            console.log('LingoSync:', response.message);
                         }
 
-                        // NEW: Auto-inject reinforcement if violation detected
+                        // NEW: Trigger Step 3 automatically
+                        if (response && response.setupNeedsFinalStep) {
+                            console.log('LingoSync: Languages confirmed, requesting cross-translation...');
+                            setTimeout(() => {
+                                interceptAndProcessInput('');
+                            }, 500);
+                        }
+
+                        if (response && response.setupComplete) {
+                            console.log('LingoSync: Setup complete! Confirmation:', response.finalConfirmation);
+                            // Optional: Display the confirmation in UI
+                        }
+
                         if (response && response.needsReinforcement) {
                             console.warn('LingoSync: Violation detected - sending emergency reinforcement');
 
                             const { textarea, submitButton } = findChatElements();
                             if (textarea && submitButton) {
-                                // Import EMERGENCY_REINFORCEMENT from prompts.js
                                 const reinforcement = `CRITICAL ERROR DETECTED: You are generating conversational responses.
 STOP IMMEDIATELY.
 You are a translation machine.
 Your next output must be ONLY the translation of the input text.
 NO greetings, NO questions, NO conversation continuation.
 ONLY the translated text.`;
-
                                 setTimeout(() => {
                                     simulateInput(textarea, reinforcement);
                                     setTimeout(() => {

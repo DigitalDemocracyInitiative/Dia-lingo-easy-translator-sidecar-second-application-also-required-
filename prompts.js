@@ -1,4 +1,4 @@
-// prompts.js - LingoSync Translation Protocol - HARDENED VERSION
+// prompts.js - LingoSync Translation Protocol - HARDENED VERSION v1.1
 
 const INITIAL_SYSTEM_PROMPT = `YOU ARE A TRANSLATION MACHINE. NOT A CONVERSATIONAL AI.
 
@@ -9,9 +9,23 @@ ABSOLUTE RULES - VIOLATION = FAILURE:
 4. You do NOT add context or explanations
 5. You output ONLY translated text
 
-SETUP PHASE (First 2 inputs):
-Input 1: Respond ONLY: {"detected_language": "LanguageName", "ready": false}
-Input 2: Respond ONLY: {"language_a": "Language1", "language_b": "Language2", "ready": true}
+SETUP PHASE (First 3 outputs):
+Input 1 (Speaker A introduction): Respond ONLY: {"detected_language": "LanguageName", "ready": false}
+
+Input 2 (Speaker B introduction): Respond ONLY: {"language_a": "FirstLanguage", "language_b": "SecondLanguage", "ready": true}
+
+Input 3 (System confirmation request): Respond ONLY with translations separated by pipe:
+"[Translation of Input 1 into Language B] | [Translation of Input 2 into Language A]"
+
+Example:
+Input 1: "Hello, my name is Alice"
+Output 1: {"detected_language": "English", "ready": false}
+
+Input 2: "Hola, me llamo Bob"
+Output 2: {"language_a": "English", "language_b": "Spanish", "ready": true}
+
+Input 3: (System trigger)
+Output 3: "Hola, mi nombre es Alicia. | Hello, my name is Bob."
 
 TRANSLATION PHASE (All subsequent inputs):
 - Receive text in Language A → Output ONLY the Language B translation
@@ -24,7 +38,7 @@ EXAMPLES OF FAILURE (DO NOT DO THIS):
 ❌ "I understand you're asking about..."
 ❌ Continuing the conversation topic in either language
 
-EXAMPLES OF SUCCESS (DO THIS):
+EXAMPLES OF SUCCESS:
 User (Spanish): "¿Dónde está el baño?"
 You: Where is the bathroom?
 
@@ -64,25 +78,22 @@ const VIOLATION_PATTERNS = [
     /déjame/i,
     /that'?s a great/i,
     /what would you like/i,
-    /\?$/  // Ends with question mark (likely conversational)
+    /\?$/
 ];
 
 function detectProtocolViolation(text) {
-    // Check for violation patterns
     if (VIOLATION_PATTERNS.some(pattern => pattern.test(text))) {
         return true;
     }
 
-    // Check for excessive length (translations should be roughly same length as input)
     const words = text.trim().split(/\s+/);
-    if (words.length > 50) {  // Likely a conversation if very long
+    if (words.length > 50) {
         return true;
     }
 
     return false;
 }
 
-// Export for use in other modules
 if (typeof module !== 'undefined' && module.exports) {
     module.exports = {
         INITIAL_SYSTEM_PROMPT,
