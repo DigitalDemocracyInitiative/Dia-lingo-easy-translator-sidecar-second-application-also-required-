@@ -1,61 +1,85 @@
-// prompts.js - LingoSync Translation Protocol
+// prompts.js - LingoSync Translation Protocol - HARDENED VERSION
 
-// Initial system prompt with JSON-structured setup phase
-const INITIAL_SYSTEM_PROMPT = `TRANSLATION PROTOCOL v1.0
-=======================
-ROLE: Silent bidirectional translator
-MODE: Non-interactive. Zero commentary.
+const INITIAL_SYSTEM_PROMPT = `YOU ARE A TRANSLATION MACHINE. NOT A CONVERSATIONAL AI.
 
-CRITICAL CONSTRAINTS:
-- Output = translated text ONLY. No meta-commentary.
-- No greetings, acknowledgments, questions, or explanations.
-- No "Here is the translation:" or similar framing.
-- If you add ANY non-translation text, you have failed.
+ABSOLUTE RULES - VIOLATION = FAILURE:
+1. You do NOT have conversations
+2. You do NOT continue dialogues
+3. You do NOT ask questions
+4. You do NOT add context or explanations
+5. You output ONLY translated text
 
-SETUP PHASE (First 2 inputs only):
-For input 1, respond with ONLY this exact JSON:
-{"detected_language": "LanguageName", "ready": false}
+SETUP PHASE (First 2 inputs):
+Input 1: Respond ONLY: {"detected_language": "LanguageName", "ready": false}
+Input 2: Respond ONLY: {"language_a": "Language1", "language_b": "Language2", "ready": true}
 
-For input 2, respond with ONLY this exact JSON:
-{"language_a": "FirstLanguage", "language_b": "SecondLanguage", "ready": true}
+TRANSLATION PHASE (All subsequent inputs):
+- Receive text in Language A → Output ONLY the Language B translation
+- Receive text in Language B → Output ONLY the Language A translation
+- NOTHING ELSE. NO GREETINGS. NO ACKNOWLEDGMENTS.
 
-TRANSLATION PHASE (All inputs after setup):
-- Input in Language A → Output ONLY the Language B translation
-- Input in Language B → Output ONLY the Language A translation
-- NO additional words, punctuation, or formatting
+EXAMPLES OF FAILURE (DO NOT DO THIS):
+❌ "Bonjour! Comment puis-je vous aider aujourd'hui?"
+❌ "That's a great question! The translation is..."
+❌ "I understand you're asking about..."
+❌ Continuing the conversation topic in either language
 
-EXAMPLE OF CORRECT BEHAVIOR:
-User speaks Spanish: "¿Dónde está el baño?"
-You output: Where is the bathroom?
+EXAMPLES OF SUCCESS (DO THIS):
+User (Spanish): "¿Dónde está el baño?"
+You: Where is the bathroom?
 
-WRONG (do not do this):
-"The translation is: Where is the bathroom?"
-"Here you go: Where is the bathroom?"
+User (French): "Je voudrais un café"
+You: I would like a coffee
 
-You are now in SETUP PHASE. Await first input.`;
+User (English): "What time is it?"
+You: ¿Qué hora es?
 
-// Translation prompt wrapper for active phase
+NO OTHER OUTPUT IS PERMITTED. YOU ARE NOW IN SETUP PHASE.`;
+
 const TRANSLATION_PROMPT_WRAPPER = (text, sourceLang, targetLang) => {
-    return `Translate from ${sourceLang} to ${targetLang}. Output ONLY the translation: ${text}`;
+    return `TRANSLATION ONLY. NO CONVERSATION.
+Source (${sourceLang}): "${text}"
+Output the ${targetLang} translation with NO additional text:`;
 };
 
-// Reinforcement prompt to combat LLM drift (inject every 10 turns)
-const REINFORCEMENT_PROMPT = `PROTOCOL REMINDER: You are in translation-only mode. Your next response must be ONLY the translated text. No acknowledgments, explanations, or meta-commentary. Just the translation.`;
+const EMERGENCY_REINFORCEMENT = `CRITICAL ERROR DETECTED: You are generating conversational responses.
+STOP IMMEDIATELY.
+You are a translation machine.
+Your next output must be ONLY the translation of the input text.
+NO greetings, NO questions, NO conversation continuation.
+ONLY the translated text.`;
 
-// Protocol violation detection patterns
 const VIOLATION_PATTERNS = [
+    /how can i help/i,
+    /comment puis-je/i,
+    /¿en qué puedo/i,
     /here is the translation/i,
     /i understand/i,
     /certainly/i,
     /of course/i,
-    /translates to/i,
-    /in \w+ this means/i,
-    /the translation is/i,
-    /this says/i
+    /bien sûr/i,
+    /por supuesto/i,
+    /let me/i,
+    /permettez-moi/i,
+    /déjame/i,
+    /that'?s a great/i,
+    /what would you like/i,
+    /\?$/  // Ends with question mark (likely conversational)
 ];
 
 function detectProtocolViolation(text) {
-    return VIOLATION_PATTERNS.some(pattern => pattern.test(text));
+    // Check for violation patterns
+    if (VIOLATION_PATTERNS.some(pattern => pattern.test(text))) {
+        return true;
+    }
+
+    // Check for excessive length (translations should be roughly same length as input)
+    const words = text.trim().split(/\s+/);
+    if (words.length > 50) {  // Likely a conversation if very long
+        return true;
+    }
+
+    return false;
 }
 
 // Export for use in other modules
@@ -63,7 +87,7 @@ if (typeof module !== 'undefined' && module.exports) {
     module.exports = {
         INITIAL_SYSTEM_PROMPT,
         TRANSLATION_PROMPT_WRAPPER,
-        REINFORCEMENT_PROMPT,
+        EMERGENCY_REINFORCEMENT,
         detectProtocolViolation
     };
 }

@@ -66,11 +66,6 @@ chrome.runtime.onMessage.addListener((request, sender, sendResponse) => {
             currentSpeaker = (currentSpeaker === 'A') ? 'B' : 'A';
             turnCount++;
 
-            // Inject reinforcement prompt every 10 turns to prevent drift
-            if (turnCount % 10 === 0) {
-                responsePrompt = REINFORCEMENT_PROMPT + '\n\n' + responsePrompt;
-            }
-
             sendResponse({ prompt: responsePrompt });
         } else {
             sendResponse({ error: 'Session not active' });
@@ -86,7 +81,6 @@ chrome.runtime.onMessage.addListener((request, sender, sendResponse) => {
                 const parsed = JSON.parse(llmOutput.trim());
 
                 if (parsed.ready === false && !languageA) {
-                    // First language detected
                     languageA = parsed.detected_language;
                     sendResponse({
                         success: true,
@@ -94,7 +88,6 @@ chrome.runtime.onMessage.addListener((request, sender, sendResponse) => {
                     });
 
                 } else if (parsed.ready === true && languageA && !languageB) {
-                    // Second language detected, setup complete
                     languageB = parsed.language_b;
                     currentState = CONVERSATION_STATE.ACTIVE;
 
@@ -113,12 +106,15 @@ chrome.runtime.onMessage.addListener((request, sender, sendResponse) => {
             }
 
         } else if (currentState === CONVERSATION_STATE.ACTIVE) {
-            // Check for protocol violations
+            // ENHANCED: Check for protocol violations
             if (detectProtocolViolation(llmOutput)) {
-                console.warn('LingoSync: Protocol violation detected in LLM response');
+                console.error('LingoSync: PROTOCOL VIOLATION - Injecting emergency reinforcement');
+
+                // Send emergency reinforcement back to content script
                 sendResponse({
                     violation: true,
-                    text: llmOutput
+                    text: llmOutput,
+                    needsReinforcement: true  // NEW FLAG
                 });
             } else {
                 sendResponse({

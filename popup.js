@@ -51,3 +51,19 @@ updateUI();
 
 // Refresh UI every 2 seconds while open
 setInterval(updateUI, 2000);
+
+const resetBtn = document.getElementById('resetBtn');
+
+resetBtn.addEventListener('click', () => {
+    if (confirm('This will stop the session and inject a reinforcement prompt. Continue?')) {
+        chrome.runtime.sendMessage({ action: 'STOP_SESSION' }, () => {
+            // Send emergency reinforcement to current tab
+            chrome.tabs.query({active: true, currentWindow: true}, (tabs) => {
+                chrome.tabs.sendMessage(tabs[0].id, {
+                    action: 'INJECT_EMERGENCY_REINFORCEMENT'
+                });
+            });
+            updateUI();
+        });
+    }
+});

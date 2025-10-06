@@ -99,7 +99,6 @@ const inputObserver = new MutationObserver(() => {
 const outputObserver = new MutationObserver((mutations) => {
     for (const mutation of mutations) {
         if (mutation.addedNodes.length > 0) {
-            // Find the most recent assistant message
             const messages = document.querySelectorAll(SELECTORS.messageContainer);
             const lastMessage = messages[messages.length - 1];
 
@@ -109,7 +108,6 @@ const outputObserver = new MutationObserver((mutations) => {
                 if (messageText !== lastProcessedOutput && messageText.length > 0) {
                     lastProcessedOutput = messageText;
 
-                    // Send to background for state management
                     chrome.runtime.sendMessage({
                         action: 'HANDLE_LLM_RESPONSE',
                         text: messageText
@@ -117,8 +115,28 @@ const outputObserver = new MutationObserver((mutations) => {
                         if (response && response.setupComplete) {
                             console.log('LingoSync: Setup complete, translation active');
                         }
-                        if (response && response.violation) {
-                            console.warn('LingoSync: Protocol violation detected');
+
+                        // NEW: Auto-inject reinforcement if violation detected
+                        if (response && response.needsReinforcement) {
+                            console.warn('LingoSync: Violation detected - sending emergency reinforcement');
+
+                            const { textarea, submitButton } = findChatElements();
+                            if (textarea && submitButton) {
+                                // Import EMERGENCY_REINFORCEMENT from prompts.js
+                                const reinforcement = `CRITICAL ERROR DETECTED: You are generating conversational responses.
+STOP IMMEDIATELY.
+You are a translation machine.
+Your next output must be ONLY the translation of the input text.
+NO greetings, NO questions, NO conversation continuation.
+ONLY the translated text.`;
+
+                                setTimeout(() => {
+                                    simulateInput(textarea, reinforcement);
+                                    setTimeout(() => {
+                                        submitButton.click();
+                                    }, 50);
+                                }, 500);
+                            }
                         }
                     });
                 }
@@ -171,6 +189,30 @@ function initLingoSync() {
         }
     });
 }
+
+// Listen for emergency reset from popup
+chrome.runtime.onMessage.addListener((request, sender, sendResponse) => {
+    if (request.action === 'INJECT_EMERGENCY_REINFORCEMENT') {
+        const { textarea, submitButton } = findChatElements();
+        if (textarea && submitButton) {
+            const reinforcement = `CRITICAL ERROR DETECTED: You are generating conversational responses.
+STOP IMMEDIATELY.
+You are a translation machine.
+Your next output must be ONLY the translation of the input text.
+NO greetings, NO questions, NO conversation continuation.
+ONLY the translated text.`;
+
+            simulateInput(textarea, reinforcement);
+            setTimeout(() => {
+                submitButton.click();
+                sendResponse({success: true});
+            }, 50);
+        } else {
+            sendResponse({success: false, error: "Could not find chat elements"});
+        }
+        return true; // Keep message channel open for async response
+    }
+});
 
 // Auto-start when page loads
 if (document.readyState === 'loading') {

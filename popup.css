@@ -89,6 +89,16 @@ h1 {
     background: #d0d0d0;
 }
 
+.btn-warning {
+    background: #fbbc04;
+    color: #333;
+}
+
+.btn-warning:hover {
+    background: #e37400;
+    color: white;
+}
+
 .btn:disabled {
     opacity: 0.5;
     cursor: not-allowed;
